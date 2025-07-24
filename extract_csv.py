@@ -101,18 +101,6 @@ def split_train_test(D):
     train_data = epoch_data(train_ids, M, target, person_id)
     test_data = epoch_data(test_ids, M, target, person_id)
 
-    # train_data = {
-    #     'M': M[train_mask],
-    #     't': target[train_mask],
-    #     'i': person_id[train_mask]
-    # }
-
-    # test_data = {
-    #     'M': M[test_mask],
-    #     't': target[test_mask],
-    #     'i': person_id[test_mask]
-    # }
-    #save to different files
     savemat('train_data.mat', train_data)
     savemat('test_data.mat', test_data)
     print(f"Training set: {len(train_ids)} IDs, {len(train_data['M'])} rows")
