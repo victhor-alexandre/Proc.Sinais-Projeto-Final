@@ -9,53 +9,130 @@ from plot_signal import plot_signal
 from multivel_multirate_decomposition import multivel_multirate_decomposition
 from extract_filters import extract_filters
 from qmf_filters_validator import qmf_filters_validator
+from tqdm import tqdm 
+
+
+
+def extract_qmf_features(band_list, Fs):
+    # Standard EEG frequency bands
+    standard_bands = {
+        'delta': (0, 4),
+        'theta': (4, 8),
+        'alpha': (8, 16),
+        'beta': (16, 32),
+        'gamma': (32, Fs/2)
+    }
+    
+    features = []
+    
+    for i, (name, (f_low, f_high)) in enumerate(standard_bands.items()):
+        if i >= len(band_list):
+            break
+            
+        band = band_list[i]
+        freqs = np.linspace(f_low, f_high, len(band))
+        psd = np.abs(band)**2  # Power spectral density
+        
+        features.extend([
+            np.sum(band**2),       # energy
+            freqs[np.argmax(band)], # peak freq
+            np.sum(freqs * psd) / (np.sum(psd) + 1e-10)  # Spectral centroid
+        ])
+    
+    return np.array(features)
+
+def create_feature_whole_data(M, target, person_id, fs, QMF_levels, db, data_type):
+    unique_ids = np.unique(person_id)
+    n_electrodes = 19
+    
+    h0, h1, g0, g1 = extract_filters(db)
+    _, _, _, A, d = qmf_filters_validator(h0, h1, g0, g1)
+
+
+    features = np.empty((len(unique_ids), n_electrodes), dtype=object)
+    person_labels = []
+
+    # for each id, for each electrode, perform the qmf decomposition and extract the features
+    for idx, uid in enumerate(tqdm(unique_ids, desc="Processing IDs")):
+        mask = (person_id == uid)
+        segments = M[mask] 
+        label = target[mask][0] 
+        
+        electrode_features = []
+        for elec in range(n_electrodes):
+            signal = np.concatenate([seg[:, elec] for seg in segments])
+            _, qmf_bands = multivel_multirate_decomposition(signal, h0, h1, A, d, levels=QMF_levels)
+            electrode_features.append(extract_qmf_features(qmf_bands, fs))
+        
+        features[idx] = electrode_features
+        person_labels.append(label)
+    
+    mat_data = {
+        'features': features,
+        'target': np.array(person_labels),
+        'person_id': unique_ids,
+        'fs': fs
+    }
+    
+    savemat(f'prepared_data/{data_type}_whole_qmf_features_db{db-1}.mat', mat_data)
+    print(f"Saved features for {len(unique_ids)} examples × {n_electrodes} electrodes")
+
+def create_feature_epoched_data(M, target, person_id, epoch_id, fs, QMF_levels, db, data_type):
+    n_epochs = len(M)
+    n_electrodes = 19 
+    
+    h0, h1, g0, g1 = extract_filters(db)
+    _, _, _, A, d = qmf_filters_validator(h0, h1, g0, g1)
+
+    features = np.empty((n_epochs, n_electrodes), dtype=object)
+    # for each epoch, for each electrode, perform the qmf decomposition and extract the features
+    for epoch_idx in tqdm(range(n_epochs), desc="Processing epochs"):
+        epoch = M[epoch_idx] 
+        
+        for electrode in range(n_electrodes):
+            signal = epoch[:, electrode]
+            
+            _, qmf_bands = multivel_multirate_decomposition(signal, h0, h1, A, d, levels = QMF_levels) 
+            
+            features[epoch_idx, electrode] = extract_qmf_features(qmf_bands, fs)
+
+    mat_data = {
+        'features': features,
+        'target': target,
+        'person_id': person_id,
+        'epoch_id': epoch_id,
+        'fs': fs
+    }
+
+    savemat(f'prepared_data/{data_type}_epoched_qmf_features_db{db-1}.mat', mat_data)
+    print(f"Saved features for {n_epochs} epochs × {n_electrodes} electrodes")
+
+    return
+
+def process_database():
+    fs = 128
+    QMF_levels = 4
+    
+    file_type = "test"
+    M, target, person_id, epoch_id = load_data(file_type)
+
+    create_feature_epoched_data(M, target, person_id, epoch_id, fs, QMF_levels, db=5, data_type=file_type)
+    create_feature_epoched_data(M, target, person_id, epoch_id, fs, QMF_levels, db=7, data_type=file_type)
+
+    create_feature_whole_data(M, target, person_id, fs, QMF_levels, db=5, data_type=file_type)
+    create_feature_whole_data(M, target, person_id, fs, QMF_levels, db=7, data_type=file_type)
+
+    file_type = "train"
+    M, target, person_id, epoch_id = load_data(file_type)
+
+    create_feature_epoched_data(M, target, person_id, epoch_id, fs, QMF_levels, db=5, data_type=file_type)
+    create_feature_epoched_data(M, target, person_id, epoch_id, fs, QMF_levels, db=7, data_type=file_type)
+
+    create_feature_whole_data(M, target, person_id, fs, QMF_levels, db=5, data_type=file_type)
+    create_feature_whole_data(M, target, person_id, fs, QMF_levels, db=7, data_type=file_type)
+
+    return
 
 if __name__ == '__main__':
 
-    #the load function will bring data from the train or test dataset, or the original dataset
-
-    file_type = "train"
-
-    M, target, person_id = load_data(file_type)
-    # print(person_id)
-    IDs = np.unique(person_id)
-    # for ID in IDs:  #for each ID
-    #     for i in range(len(M[0,:])):    #for each electrode
-            # The idea is to separate the signal of the electrode in multiple 10seconds small signals
-            # then apply the QMF, and calculate the energy in each band
-            # And finally, create a secondary matrix, that is 3D, where for each electrode at each 10s chunk it tells us the value of the energy of each bandwidth
-            # Or maybe create 5 matrixes, each corresponding to one of the bandwidth's energy
-            # Or maybe even, create 19 matrixes (one for each elecrode) with 5 columns (the bandwidths), and each 10s signal is a different "patient"
-
-    # print(unique[0])
-    m = M[person_id == IDs[0]]
-    # print(m)
-    x = m[:,0]
-    # print(len(x))
-    # plot_signal(x, 128, "t", f"eeg for the id {unique[0]}")
-    fs = 128
-    segment_samples = int(fs * 10)
-    num_segments = int(np.ceil(len(x)/segment_samples))
-
-    segments = []
-    for i in range(num_segments):
-        start = i * segment_samples
-        end = start + segment_samples
-        segment = x[start:end]
-        segments.append(segment)
-
-    # maybe use both daubechies 4 and 6, and compare results
-    h0, h1, g0, g1 = extract_filters(5) #db6
-    _, _, _, A, d = qmf_filters_validator(h0, h1, g0, g1)
-    x_hat, x_decomp = multivel_multirate_decomposition(segments[0], h0, h1, A, d, levels = 5)
-    print(f"x_hat: \n{x_hat}")
-    print(f"len of x_decomp = {len(x_decomp)}")
-    # print(f"x_decomp: \n{x_decomp}")
-    plot_signal(x_hat, 1, "f", "EEG")
-
-    #TODO
-    #next steps:
-    #decompose the signal in the five frequencies (alpha, beta...)
-    #data augmentation, by taking chunks of 10 seconds from each signal, from each electrode
-    #features will be, in this approach, the energy in each frequency band, in each time chunk, in each electrode
-    #essentially, for a single patient, we have multiple 10 seconds chunks of data, that will have 5 features each (the energy in each frequency band)
+    process_database()
