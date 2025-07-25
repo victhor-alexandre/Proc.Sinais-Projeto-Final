@@ -40,8 +40,8 @@ def qmf_filters_validator(h0, h1, g0, g1, tol = 1e-6):
         lti_term_valid = True
         n = np.arange(0, len(lti_term))
         d = np.setdiff1d(n, k)[0]
-        print("Atraso:")
-        print(d)
+        # print("Atraso:")
+        # print(d)
         A = lti_term[d]
     else:
         lti_term_valid = False

@@ -127,6 +127,8 @@ def load_data(file_type):
         epoch_id = D['e'].flatten()
         return M, target, person_id, epoch_id
     else:
+        if (not exists('adhdata.csv')):
+            raise FileNotFoundError(f"Couldn't find the adhdata.csv file. Please check the README.md and download the files from the link provided there")
         M, target, person_id = read_csv_database('adhdata.csv')
         D = {}
         D['M'] = M

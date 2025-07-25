@@ -1,4 +1,5 @@
 Python_files
 *.mat
-*.csv
-prepared_data
+adhdata.csv
+processed_data
+trained_data
