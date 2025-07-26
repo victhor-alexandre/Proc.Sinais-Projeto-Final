@@ -66,23 +66,21 @@ def run_and_log_test(data_type, db, kernel, generalized):
 def test_svm(data_type, db, kernel, generalized=True):
     D = loadmat(f"processed_data/test_{data_type}_qmf_features_db{db}.mat")
     features = D['features']
-
-    n_epochs = features.shape[0]      # 592
-    n_electrodes = features.shape[1]  # 19
-
-
     target = np.array(D['target']).flatten()
+
+    n_epochs = features.shape[0]
+    n_electrodes = features.shape[1]
+
     prediction = np.empty((n_epochs, n_electrodes), dtype='object')
     targets = np.empty((n_epochs, n_electrodes), dtype='object')
     acc = np.empty((n_epochs, n_electrodes), dtype='object')
 
-
+    # Pre-load all models/scalers
     if(generalized):
         model_type = "generalized"
         scalers = joblib.load(f'trained_data/{kernel}_kernel/db{db}_{data_type}/db{db}_{data_type}_scaler_generalized.savedscaler')
         models = joblib.load(f'trained_data/{kernel}_kernel/db{db}_{data_type}/db{db}_{data_type}_trained_generalized_svm.savedsvm') 
     else:
-        # Pre-load all models/scalers
         model_type = "per-electrode"
         scalers = [joblib.load(f'trained_data/{kernel}_kernel/db{db}_{data_type}/db{db}_{data_type}_scaler_{e}.savedscaler') for e in range(n_electrodes)]
         models = [joblib.load(f'trained_data/{kernel}_kernel/db{db}_{data_type}/db{db}_{data_type}_trained_{e}_svm.savedsvm') for e in range(n_electrodes)]
@@ -90,15 +88,13 @@ def test_svm(data_type, db, kernel, generalized=True):
 
     for epoch in range(n_epochs):
         for elec in range(n_electrodes):
-            # prediction[signal,elec] = str(s.predict(X_scaled[elec])[0])
+
             if(generalized):
                 X = np.hstack([features[epoch, elec], [elec/n_electrodes]]).reshape(1, -1)
                 X_scaled = scalers.transform(X)
                 prediction[epoch, elec] = str(models.predict(X_scaled)[0])
             else:
-            # 1. Extract and reshape features
                 X = features[epoch, elec].reshape(1, -1) 
-                # 2.  Scale and predict
                 X_scaled = scalers[elec].transform(X) 
                 prediction[epoch, elec] = str(models[elec].predict(X_scaled)[0])
 
@@ -106,46 +102,36 @@ def test_svm(data_type, db, kernel, generalized=True):
             acc[epoch,elec] = (prediction[epoch,elec] == target[epoch])
     
     result = np.array(prediction).flatten()
-    t = np.array(targets).flatten()
+    t = np.array(targets).flatten()         
     
-    
-    # print(result.shape)
-    # print(t.shape)
-
-    # n_correct = np.sum(acc)          # Count all True values in the accuracy matrix
-    # n_total = acc.size               # Total predictions (x_size * y_size)
-    # accuracy = n_correct / n_total   # Overall accuracy
     print(f"Testing with {kernel} kernels, and {model_type}_trained models")
     print(f"test with db{db} and {data_type} data")
-    # print(f"Correct predictions: {n_correct}/{n_total}")
-    # print(f"Accuracy: {accuracy:.2%}")
-
 
     return t, result
 
 if __name__ == '__main__':
-
-    # Test configurations to run
+    #this will test for all electrodes at the same time, with different parameters
+    
     test_scenarios = [
         {'data_type': 'epoched', 'db': 4, 'kernel': 'linear', 'generalized': True},
         {'data_type': 'epoched', 'db': 4, 'kernel': 'linear', 'generalized': False},
-        {'data_type': 'epoched', 'db': 4, 'kernel': 'rbf', 'generalized': True},
-        {'data_type': 'epoched', 'db': 4, 'kernel': 'rbf', 'generalized': False},
+        {'data_type': 'epoched', 'db': 4, 'kernel': 'rbf',    'generalized': True},
+        {'data_type': 'epoched', 'db': 4, 'kernel': 'rbf',    'generalized': False},
 
         {'data_type': 'epoched', 'db': 6, 'kernel': 'linear', 'generalized': True},
         {'data_type': 'epoched', 'db': 6, 'kernel': 'linear', 'generalized': False},
-        {'data_type': 'epoched', 'db': 6, 'kernel': 'rbf', 'generalized': True},
-        {'data_type': 'epoched', 'db': 6, 'kernel': 'rbf', 'generalized': False},
+        {'data_type': 'epoched', 'db': 6, 'kernel': 'rbf',    'generalized': True},
+        {'data_type': 'epoched', 'db': 6, 'kernel': 'rbf',    'generalized': False},
 
-        {'data_type': 'whole', 'db': 4, 'kernel': 'linear', 'generalized': True},
-        {'data_type': 'whole', 'db': 4, 'kernel': 'linear', 'generalized': False},
-        {'data_type': 'whole', 'db': 4, 'kernel': 'rbf', 'generalized': True},
-        {'data_type': 'whole', 'db': 4, 'kernel': 'rbf', 'generalized': False},
+        {'data_type': 'whole',   'db': 4, 'kernel': 'linear', 'generalized': True},
+        {'data_type': 'whole',   'db': 4, 'kernel': 'linear', 'generalized': False},
+        {'data_type': 'whole',   'db': 4, 'kernel': 'rbf',    'generalized': True},
+        {'data_type': 'whole',   'db': 4, 'kernel': 'rbf',    'generalized': False},
 
-        {'data_type': 'whole', 'db': 6, 'kernel': 'linear', 'generalized': True},
-        {'data_type': 'whole', 'db': 6, 'kernel': 'linear', 'generalized': False},
-        {'data_type': 'whole', 'db': 6, 'kernel': 'rbf', 'generalized': True},
-        {'data_type': 'whole', 'db': 6, 'kernel': 'rbf', 'generalized': False},
+        {'data_type': 'whole',   'db': 6, 'kernel': 'linear', 'generalized': True},
+        {'data_type': 'whole',   'db': 6, 'kernel': 'linear', 'generalized': False},
+        {'data_type': 'whole',   'db': 6, 'kernel': 'rbf',    'generalized': True},
+        {'data_type': 'whole',   'db': 6, 'kernel': 'rbf',    'generalized': False},
     ]
 
     # Run all tests
@@ -154,26 +140,6 @@ if __name__ == '__main__':
         print(f"running test on scenario {i}/16")
         run_and_log_test(**config)
         i=i+1
-
-
-
-    # targets, results = test_svm(data_type='epoched', db=4, kernel="linear", generalized=True)
-    # M, accuracy, recall, specificity, precision, F1 = metrics(targets, results)
-    # print(f"M: \n{M}")
-    # print(f"accuracy: {accuracy}")
-    # print(f"recall: {recall}")
-    # print(f"specificity: {specificity}")
-    # print(f"precision: {precision}")
-    # print(f"F1: {F1}\n")
-    
-    # targets, results = test_svm(data_type='epoched', db=4, kernel="rbf", generalized=True)
-    # M, accuracy, recall, specificity, precision, F1 = metrics(targets, results)
-    # print(f"M: \n{M}")
-    # print(f"accuracy: {accuracy}")
-    # print(f"recall: {recall}")
-    # print(f"specificity: {specificity}")
-    # print(f"precision: {precision}")
-    # print(f"F1: {F1}\n")
 
 
     

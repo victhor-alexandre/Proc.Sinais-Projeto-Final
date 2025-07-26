@@ -1,3 +1,4 @@
+#python libraries
 from matplotlib import pyplot as plt
 import numpy as np
 from sklearn.svm import SVC
@@ -5,16 +6,19 @@ from sklearn.preprocessing import StandardScaler
 from scipy.io import loadmat, savemat
 from os.path import exists
 from os import makedirs
-
 import joblib
 from joblib import Parallel, delayed
 
+#my libraries
 from process_database import process_database
 
-def train_electrode_svm_parallel(electrode, features, targets, data_type, db, kernel='linear', C=1.0):
-    X = features[:, electrode, :]
 
-    X = X.reshape(X.shape[0], -1)
+def train_electrode_svm_parallel(electrode, features, targets, data_type, db, kernel='linear', C=1.0):
+    X = features[:, electrode, :]   #features is 3d
+
+    #scaler is used because some features are way much bigger thn others. This normalizes them
+    #for example, the energy of the band will be of higher magnitude than the peak frequency in the band, in numbers
+    X = X.reshape(X.shape[0], -1)   #rescales features for better performance on training
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
     y = targets
@@ -27,7 +31,7 @@ def train_electrode_svm_parallel(electrode, features, targets, data_type, db, ke
     makedirs(f'trained_data/{kernel}_kernel', exist_ok=True)
     makedirs(f'trained_data/{kernel}_kernel/db{db}_{data_type}', exist_ok=True)
 
-    #saving the svm models for the current electrode
+    #saving the svm models and scalers for the current electrode
     joblib.dump(svm, f'trained_data/{kernel}_kernel/db{db}_{data_type}/db{db}_{data_type}_trained_{electrode}_svm.savedsvm')
     joblib.dump(scaler, f'trained_data/{kernel}_kernel/db{db}_{data_type}/db{db}_{data_type}_scaler_{electrode}.savedscaler')
     return (electrode, svm, scaler)
@@ -109,15 +113,15 @@ if __name__ == "__main__":
     QMF_levels=4
     fs=128
 
-    train_svm(data_type='epoched', db=4, QMF_levels=4, fs=128, kernel="linear")
-    train_svm(data_type='whole', db=4, QMF_levels=4, fs=128, kernel="linear")
-    train_svm(data_type='epoched', db=6, QMF_levels=4, fs=128, kernel="linear")
-    train_svm(data_type='whole', db=6, QMF_levels=4, fs=128, kernel="linear")
+    train_svm(data_type='epoched',  db=4, QMF_levels=4, fs=128, kernel="linear")
+    train_svm(data_type='whole',    db=4, QMF_levels=4, fs=128, kernel="linear")
+    train_svm(data_type='epoched',  db=6, QMF_levels=4, fs=128, kernel="linear")
+    train_svm(data_type='whole',    db=6, QMF_levels=4, fs=128, kernel="linear")
     
-    train_svm(data_type='epoched', db=4, QMF_levels=4, fs=128, kernel="rbf")
-    train_svm(data_type='whole', db=4, QMF_levels=4, fs=128, kernel="rbf")
-    train_svm(data_type='epoched', db=6, QMF_levels=4, fs=128, kernel="rbf")
-    train_svm(data_type='whole', db=6, QMF_levels=4, fs=128, kernel="rbf")
+    train_svm(data_type='epoched',  db=4, QMF_levels=4, fs=128, kernel="rbf")
+    train_svm(data_type='whole',    db=4, QMF_levels=4, fs=128, kernel="rbf")
+    train_svm(data_type='epoched',  db=6, QMF_levels=4, fs=128, kernel="rbf")
+    train_svm(data_type='whole',    db=6, QMF_levels=4, fs=128, kernel="rbf")
 
     
 

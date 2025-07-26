@@ -19,7 +19,9 @@ from extract_csv import load_data
 
 
 def extract_qmf_features(band_list, Fs, signal):
-    # Standard EEG frequency bands will coincide with the qmf bands
+    #these are the qmf bands. I'm approximating to the literature known bands (alpha, beta, gamma...), but it's only an approximation
+    #this study doesn't take the literature bands themselves into consideration.
+    #instead, i'm extracting features from the qmf bands
     standard_bands = {
         'delta': (0, 4),
         'theta': (4, 8),
@@ -30,8 +32,9 @@ def extract_qmf_features(band_list, Fs, signal):
     
     features = []
     # Raw signal temporal features
+    stand_deviation = np.std(signal)     #temporal standard deviation
     features.extend([
-        np.std(signal),     #temporal standard deviation
+        stand_deviation,
     ])
 
     for i, (name, (f_low, f_high)) in enumerate(standard_bands.items()):
@@ -40,53 +43,57 @@ def extract_qmf_features(band_list, Fs, signal):
             
         band = band_list[i]
         freqs = np.linspace(f_low, f_high, len(band))
+
         psd = np.abs(band)**2  # Power spectral density
+
+        energy = np.sum(band**2)       # energy
+        peak_frequency = freqs[np.argmax(band)] # peak freq
+        spectral_centroid = np.sum(freqs * psd) / (np.sum(psd) + 1e-10)  # Spectral centroid
         dominant_ratio = np.max(psd) / (np.sum(psd) + 1e-10)    #Dominant Frequency Ratio
+
         features.extend([
-            np.sum(band**2),       # energy
-            freqs[np.argmax(band)], # peak freq
-            np.sum(freqs * psd) / (np.sum(psd) + 1e-10),  # Spectral centroid
+            energy,
+            peak_frequency,
+            spectral_centroid,
             dominant_ratio
         ])
     
     return np.array(features)
 
 def create_feature_whole_data(M, target, person_id, fs, QMF_levels, db, data_type):
+    #this version calculates the features once for each electrode, for each person
+    #this way, the signals are long (some have 2~3 minutes duration)
     unique_ids = np.unique(person_id)
     n_electrodes = 19
     
     h0, h1, g0, g1 = extract_filters(db+1)
     _, _, _, A, d = qmf_filters_validator(h0, h1, g0, g1)
 
-    # Initialize list to store 3D features (n_persons × n_electrodes × n_features)
     all_features = []
     person_labels = []
 
-    for uid in tqdm(unique_ids, desc="Processing IDs"):
+    for uid in tqdm(unique_ids, desc="Processing IDs"):     #visualization of the process in progression bars
         mask = (person_id == uid)
-        segments = M[mask]
-        label = target[mask][0]
+        segments = M[mask]      #each segment is the signal taken from one person
+        label = target[mask][0] 
         
-        # Process each electrode
         electrode_features = []
         for elec in range(n_electrodes):
-            # Concatenate all segments for this electrode
             signal = np.concatenate([seg[:, elec] for seg in segments])
             
-            # Extract features (returns 1D array of fixed length)
             _, qmf_bands = multivel_multirate_decomposition(signal, h0, h1, A, d, levels=QMF_levels)
             features = extract_qmf_features(qmf_bands, fs, signal)
             electrode_features.append(features)
         
-        # Stack electrode features for this person
+        #stack electrode features for this person
         all_features.append(np.stack(electrode_features))
         person_labels.append(label)
     
-    # Convert to 3D numpy array
+    #convert to 3D np.array(IDs, electrodes, features)
     features_3d = np.stack(all_features)
     
     mat_data = {
-        'features': features_3d,  # Now a proper 3D array
+        'features': features_3d, 
         'target': np.array(person_labels),
         'person_id': unique_ids,
         'fs': fs
@@ -97,6 +104,9 @@ def create_feature_whole_data(M, target, person_id, fs, QMF_levels, db, data_typ
 
 
 def create_feature_epoched_data(M, target, person_id, epoch_id, fs, QMF_levels, db, data_type):
+    #this version calculates the features for each epoch in the data.
+    #each epoch consists of 8 seconds (can be changed)
+    #as if each person took multiple takes of the EEG
     n_epochs = len(M)
     n_electrodes = 19 
     

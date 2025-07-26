@@ -30,17 +30,14 @@ def read_csv_database(filename):
 
 def epoch_data(ids, M, target, person_id, epoch_sec=8, Fs=128):
     """
-    Args:
-        M: EEG data array (n_samples × 19 electrodes)
-        target: Class labels (n_samples,)
-        person_id: Person IDs (n_samples,)
-        epoch_sec: Epoch duration in seconds
-        Fs: Sampling rate (Hz)
+    This function will segment the data into various epochs of 8 seconds
+    this way, there are multiple small signals for each person, and they all share the same target
+    the last epoch for each person will likely be shorter than 8 seconds.
+    So, for consistency, this last epoch will be discarded.
     """
     samples_per_epoch = int(Fs * epoch_sec)
-    n_electrodes = 19  # Assuming 19 columns = electrodes
+    n_electrodes = 19 
     
-    # Storage for results
     epoched_data = []
     epoched_labels = []
     epoched_person_ids = []
@@ -49,18 +46,14 @@ def epoch_data(ids, M, target, person_id, epoch_sec=8, Fs=128):
     for current_id in ids:
         # Get all rows for this person
         person_mask = (person_id == current_id)
-        person_eeg = M[person_mask]  # (n_person_samples × 19)
+        person_signals = M[person_mask]  # (n_person_samples × 19)
         person_label = target[person_mask][0]
         
-        n_samples = person_eeg.shape[0]
+        n_samples = person_signals.shape[0]
         n_epochs = n_samples // samples_per_epoch
         
-        if n_epochs == 0:
-            print(f"Skipping {current_id}: Not enough samples ({n_samples/Fs:.1f}s < {epoch_sec}s)")
-            continue
-        
         # Reshape to (n_epochs, samples_per_epoch, n_electrodes)
-        epochs = person_eeg[:n_epochs*samples_per_epoch].reshape(
+        epochs = person_signals[:n_epochs*samples_per_epoch].reshape(
             n_epochs, samples_per_epoch, n_electrodes
         )
         
@@ -70,9 +63,6 @@ def epoch_data(ids, M, target, person_id, epoch_sec=8, Fs=128):
         epoched_person_ids.extend([current_id] * n_epochs)
         epoched_epoch_ids.extend(range(n_epochs))
     
-    if not epoched_data:
-        raise ValueError("No valid epochs created. Check your epoch_sec and data lengths.")
-    
     return {
         'M': np.concatenate(epoched_data, axis=0),  # (total_epochs, samples_per_epoch, 19)
         't': np.array(epoched_labels),
@@ -81,23 +71,23 @@ def epoch_data(ids, M, target, person_id, epoch_sec=8, Fs=128):
     }
 
 def split_train_test(D):
-    #shuffle ids, because they are in order
     M = np.array(D['M'])
     target = np.array(D['t']).flatten()
     person_id = np.array(D['i']).flatten()
     # epoch_id = np.array(D['e']).flatten()
 
     unique_ids = np.unique(person_id)
-    np.random.shuffle(unique_ids)
+    np.random.shuffle(unique_ids)       #the IDs are in order (first one class, then the other), so we eed to shuffle them before splitting
     
-    # split for training and testing
+    # split for training and testing 
+    #there is no guarantee that they have the same ratio for positive and negative (control group)
     train_ids = unique_ids[:85]
     test_ids = unique_ids[85:]
 
-    # train_mask = np.isin(person_id, train_ids)
-    # test_mask = np.isin(person_id, test_ids)
-
-     # Epoch both train and test data
+    #epoch both train and test data
+    #since there will be columns for the person_id and the epoch_id
+    #the "epoching" here only labels each epoch. Later, when processing the data, there will e two approaches:
+    #one considering the person_id (whole data), and another considering the epoch_id (epoched data)
     train_data = epoch_data(train_ids, M, target, person_id)
     test_data = epoch_data(test_ids, M, target, person_id)
 
@@ -105,7 +95,6 @@ def split_train_test(D):
     savemat('test_data.mat', test_data)
     print(f"Training set: {len(train_ids)} IDs, {len(train_data['M'])} rows")
     print(f"Test set: {len(test_ids)} IDs, {len(test_data['M'])} rows")
-
     return
 
 
@@ -138,7 +127,7 @@ def load_data(file_type):
 
         savemat('adhdata.mat', D)
         split_train_test(D)
-        return load_data(file_type)
+        return load_data(file_type)     #recursively calls itself, now that the files exist, to load them
 
     return M, target, person_id, epoch_id
 
