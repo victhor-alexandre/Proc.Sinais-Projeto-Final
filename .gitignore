@@ -3,3 +3,5 @@ Python_files
 adhdata.csv
 processed_data
 trained_data
+figures
+report_latex

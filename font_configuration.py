@@ -5,5 +5,5 @@ def font_configuration():
         "text.usetex": False,
         "font.family": "serif",
         # "font.serif": ["Palatino"],
-        "font.size": 12,
+        "font.size": 9,
     })

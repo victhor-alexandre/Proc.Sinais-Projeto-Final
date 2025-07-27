@@ -12,7 +12,7 @@ from avaliacao_desempenho_classificadores import metrics
 
 from train_svm import train_svm
 
-def save_to_csv(electrode, data_type, wavelet, kernel, model_type, metrics_tuple, filename='results_for_electrode_18(O2).csv'):
+def save_to_csv(electrode, data_type, wavelet, kernel, model_type, metrics_tuple, filename='results_for_electrode_8(Fp2).csv'):
     M, accuracy, recall, specificity, precision, F1 = metrics_tuple
     
     # Convert confusion matrix to string format
@@ -133,7 +133,7 @@ def test_svm(data_type, db, kernel, electrode, generalized=True):
 if __name__ == '__main__':
     #this will test all the combinations of parameters for a single electrode
 
-    elec = 18
+    elec = 8
 
     test_scenarios = [
         {'data_type': 'epoched', 'db': 4, 'kernel': 'linear', 'electrode' : elec, 'generalized': True},

@@ -12,7 +12,7 @@ from avaliacao_desempenho_classificadores import metrics
 
 from train_svm import train_svm
 
-def save_to_csv(electrode, data_type, wavelet, kernel, model_type, metrics_tuple, filename='results_per_electrode_wavelet.csv'):
+def save_to_csv(electrode, data_type, wavelet, kernel, model_type, metrics_tuple, filename='results_per_electrode_wavelet2.csv'):
     M, accuracy, recall, specificity, precision, F1 = metrics_tuple
     
     # Convert confusion matrix to string format
@@ -134,70 +134,32 @@ if __name__ == '__main__':
     #this version will test two sets of parameters for each electrode. 
     
     test_scenarios = [
-        {'data_type': 'epoched', 'db': 4, 'kernel': 'linear', 'electrode' : 0, 'generalized': False},
-        {'data_type': 'epoched', 'db': 6, 'kernel': 'linear', 'electrode' : 0, 'generalized': False},
-        
-        {'data_type': 'epoched', 'db': 4, 'kernel': 'linear', 'electrode' : 1, 'generalized': False},
-        {'data_type': 'epoched', 'db': 6, 'kernel': 'linear', 'electrode' : 1, 'generalized': False},
-        
-        {'data_type': 'epoched', 'db': 4, 'kernel': 'linear', 'electrode' : 2, 'generalized': False},
-        {'data_type': 'epoched', 'db': 6, 'kernel': 'linear', 'electrode' : 2, 'generalized': False},
-
-        {'data_type': 'epoched', 'db': 4, 'kernel': 'linear', 'electrode' : 3, 'generalized': False},
-        {'data_type': 'epoched', 'db': 6, 'kernel': 'linear', 'electrode' : 3, 'generalized': False},
-
-        {'data_type': 'epoched', 'db': 4, 'kernel': 'linear', 'electrode' : 4, 'generalized': False},
-        {'data_type': 'epoched', 'db': 6, 'kernel': 'linear', 'electrode' : 4, 'generalized': False},
-
-        {'data_type': 'epoched', 'db': 4, 'kernel': 'linear', 'electrode' : 5, 'generalized': False},
-        {'data_type': 'epoched', 'db': 6, 'kernel': 'linear', 'electrode' : 5, 'generalized': False},
-
-        {'data_type': 'epoched', 'db': 4, 'kernel': 'linear', 'electrode' : 6, 'generalized': False},
-        {'data_type': 'epoched', 'db': 6, 'kernel': 'linear', 'electrode' : 6, 'generalized': False},
-
-        {'data_type': 'epoched', 'db': 4, 'kernel': 'linear', 'electrode' : 7, 'generalized': False},
-        {'data_type': 'epoched', 'db': 6, 'kernel': 'linear', 'electrode' : 7, 'generalized': False},
-
-        {'data_type': 'epoched', 'db': 4, 'kernel': 'linear', 'electrode' : 8, 'generalized': False},
-        {'data_type': 'epoched', 'db': 6, 'kernel': 'linear', 'electrode' : 8, 'generalized': False},
-
-        {'data_type': 'epoched', 'db': 4, 'kernel': 'linear', 'electrode' : 9, 'generalized': False},
-        {'data_type': 'epoched', 'db': 6, 'kernel': 'linear', 'electrode' : 9, 'generalized': False},
-
-        {'data_type': 'epoched', 'db': 4, 'kernel': 'linear', 'electrode' : 10, 'generalized': False},
-        {'data_type': 'epoched', 'db': 6, 'kernel': 'linear', 'electrode' : 10, 'generalized': False},
-
-        {'data_type': 'epoched', 'db': 4, 'kernel': 'linear', 'electrode' : 11, 'generalized': False},
-        {'data_type': 'epoched', 'db': 6, 'kernel': 'linear', 'electrode' : 11, 'generalized': False},
-
-        {'data_type': 'epoched', 'db': 4, 'kernel': 'linear', 'electrode' : 12, 'generalized': False},
-        {'data_type': 'epoched', 'db': 6, 'kernel': 'linear', 'electrode' : 12, 'generalized': False},
-
-        {'data_type': 'epoched', 'db': 4, 'kernel': 'linear', 'electrode' : 13, 'generalized': False},
-        {'data_type': 'epoched', 'db': 6, 'kernel': 'linear', 'electrode' : 13, 'generalized': False},
-
-        {'data_type': 'epoched', 'db': 4, 'kernel': 'linear', 'electrode' : 14, 'generalized': False},
-        {'data_type': 'epoched', 'db': 6, 'kernel': 'linear', 'electrode' : 14, 'generalized': False},
-
-        {'data_type': 'epoched', 'db': 4, 'kernel': 'linear', 'electrode' : 15, 'generalized': False},
-        {'data_type': 'epoched', 'db': 6, 'kernel': 'linear', 'electrode' : 15, 'generalized': False},
-
-        {'data_type': 'epoched', 'db': 4, 'kernel': 'linear', 'electrode' : 16, 'generalized': False},
-        {'data_type': 'epoched', 'db': 6, 'kernel': 'linear', 'electrode' : 16, 'generalized': False},
-
-        {'data_type': 'epoched', 'db': 4, 'kernel': 'linear', 'electrode' : 17, 'generalized': False},
-        {'data_type': 'epoched', 'db': 6, 'kernel': 'linear', 'electrode' : 17, 'generalized': False},
-
-        {'data_type': 'epoched', 'db': 4, 'kernel': 'linear', 'electrode' : 18, 'generalized': False},
-        {'data_type': 'epoched', 'db': 6, 'kernel': 'linear', 'electrode' : 18, 'generalized': False},
-
+        {'data_type': 'epoched', 'db': 6, 'kernel': 'linear', 'electrode' : 0, 'generalized':  True},
+        {'data_type': 'epoched', 'db': 6, 'kernel': 'linear', 'electrode' : 1, 'generalized':  True},
+        {'data_type': 'epoched', 'db': 6, 'kernel': 'linear', 'electrode' : 2, 'generalized':  True},
+        {'data_type': 'epoched', 'db': 6, 'kernel': 'linear', 'electrode' : 3, 'generalized':  True},
+        {'data_type': 'epoched', 'db': 6, 'kernel': 'linear', 'electrode' : 4, 'generalized':  True},
+        {'data_type': 'epoched', 'db': 6, 'kernel': 'linear', 'electrode' : 5, 'generalized':  True},
+        {'data_type': 'epoched', 'db': 6, 'kernel': 'linear', 'electrode' : 6, 'generalized':  True},
+        {'data_type': 'epoched', 'db': 6, 'kernel': 'linear', 'electrode' : 7, 'generalized':  True},
+        {'data_type': 'epoched', 'db': 6, 'kernel': 'linear', 'electrode' : 8, 'generalized':  True},
+        {'data_type': 'epoched', 'db': 6, 'kernel': 'linear', 'electrode' : 9, 'generalized':  True},
+        {'data_type': 'epoched', 'db': 6, 'kernel': 'linear', 'electrode' : 10, 'generalized': True},
+        {'data_type': 'epoched', 'db': 6, 'kernel': 'linear', 'electrode' : 11, 'generalized': True},
+        {'data_type': 'epoched', 'db': 6, 'kernel': 'linear', 'electrode' : 12, 'generalized': True},
+        {'data_type': 'epoched', 'db': 6, 'kernel': 'linear', 'electrode' : 13, 'generalized': True},
+        {'data_type': 'epoched', 'db': 6, 'kernel': 'linear', 'electrode' : 14, 'generalized': True},
+        {'data_type': 'epoched', 'db': 6, 'kernel': 'linear', 'electrode' : 15, 'generalized': True},
+        {'data_type': 'epoched', 'db': 6, 'kernel': 'linear', 'electrode' : 16, 'generalized': True},
+        {'data_type': 'epoched', 'db': 6, 'kernel': 'linear', 'electrode' : 17, 'generalized': True},
+        {'data_type': 'epoched', 'db': 6, 'kernel': 'linear', 'electrode' : 18, 'generalized': True},
 
     ]
 
     # Run all tests
     i=1
     for config in test_scenarios:
-        print(f"running test on scenario {i}/38")
+        print(f"running test on scenario {i}/19")
         run_and_log_test(**config)
         i=i+1
 

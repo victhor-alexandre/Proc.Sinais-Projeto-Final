@@ -3,10 +3,12 @@ import numpy as np
 from sklearn.svm import SVC
 from sklearn.preprocessing import StandardScaler
 from scipy.io import loadmat, savemat
+from collections import Counter
 from os.path import exists
 import joblib
 import os
 import csv
+
 
 from avaliacao_desempenho_classificadores import metrics
 
@@ -34,7 +36,7 @@ def save_to_csv(data_type, wavelet, kernel, model_type, metrics_tuple, filename=
         'F1': f"{F1:.4f}",
         'confusion_matrix': confusion_str
     }
-    
+
     # Write to file
     file_exists = os.path.isfile(filename)
     with open(filename, 'a', newline='') as f:
@@ -101,11 +103,18 @@ def test_svm(data_type, db, kernel, generalized=True):
             targets[epoch,elec] = str(target[epoch])
             acc[epoch,elec] = (prediction[epoch,elec] == target[epoch])
     
-    result = np.array(prediction).flatten()
+    # result = np.array(prediction).flatten()
+    r = [Counter(row).most_common(1)[0][0] for row in prediction]
+    # print(r)
+    # print(len(r))
+
+    result = np.array(r).flatten()
+
     t = np.array(targets).flatten()         
-    
+    t = target        
+
     print(f"Testing with {kernel} kernels, and {model_type}_trained models")
-    print(f"test with db{db} and {data_type} data")
+    print(f"test with db{db} and {data_type} data\n")
 
     return t, result
 
@@ -140,6 +149,7 @@ if __name__ == '__main__':
         print(f"running test on scenario {i}/16")
         run_and_log_test(**config)
         i=i+1
+    print("Saved on results.csv")
 
 
     
